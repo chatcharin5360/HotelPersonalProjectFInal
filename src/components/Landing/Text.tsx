@@ -7,8 +7,7 @@ function Text() {
         <h1 className="text-6xl font-bold">WELCOME TO</h1>
         <h2 className="text-7xl font-extrabold">LUXURY HOTELS</h2>
         <p className="mt-4 text-lg">
-          Book your stay and enjoy luxury redefined at the most affordable
-          rates.
+          Experience Luxury and Comfort Your Perfect Stay Awaits.
         </p>
       </div>
     </div>

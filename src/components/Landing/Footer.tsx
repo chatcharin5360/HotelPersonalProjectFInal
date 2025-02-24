@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 const Footer = () => {
   return (
@@ -15,18 +16,16 @@ const Footer = () => {
           <p>info@bonhotels.com</p>
         </div>
 
-        {/* Quick Links */}
+        {/* Facility & Contact */}
         <div className="flex flex-col space-y-2">
-          <h3 className="text-lg font-semibold">Quick Links</h3>
-          <a href="#" className="hover:text-gray-400">
-            About Us
-          </a>
-          <a href="#" className="hover:text-gray-400">
-            Contact
-          </a>
-          <a href="#" className="hover:text-gray-400">
-            Terms & Conditions
-          </a>
+          <h3 className="text-lg font-semibold">Quick Link</h3>
+          <Link href="/facility" className="hover:text-gray-400">
+            Facility
+          </Link>
+
+          <Link href="/contact" className="hover:text-gray-400">
+            Contact Us
+          </Link>
         </div>
 
         {/* Subscribe Form */}
