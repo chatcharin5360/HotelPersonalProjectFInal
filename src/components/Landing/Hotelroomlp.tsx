@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 
 interface RoomType {
   id: string;
@@ -12,7 +13,6 @@ const rooms: RoomType[] = [
     id: "twin",
     title: "Standard Twin Room",
     imageUrl: "/image/Landing/twin-room.jpg",
-    
   },
   {
     id: "standard",
@@ -34,18 +34,17 @@ const rooms: RoomType[] = [
 const RoomCard = ({ title, imageUrl }: RoomType) => (
   <div className="relative overflow-hidden rounded-lg shadow-lg h-64">
     <div className="absolute inset-0 w-full h-full">
-      <Image
-       src={imageUrl}
-        alt={title}
-        fill
-        className="object-cover" />
+      <Image src={imageUrl} alt={title} fill className="object-cover" />
     </div>
     <div className="absolute inset-0 bg-black/40" />
     <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
       <h3 className="mb-4 text-2xl font-bold">{title}</h3>
-      <button className="rounded bg-[#D4B88C] px-6 py-2 text-white hover:bg-[#C4A87C] transition-colors">
-        Check Rates
-      </button>
+      {/* ปุ่ม Check Rates */}
+      <Link href="/rooms">
+        <button className="rounded bg-[#D4B88C] px-6 py-2 text-white hover:bg-[#C4A87C] transition-colors">
+          Check Rates
+        </button>
+      </Link>
     </div>
   </div>
 );
@@ -60,9 +59,12 @@ const HotelRoomslp = () => {
       </div>
       <div className="mt-12 text-center">
         <h2 className="mb-6 text-2xl font-bold">Get a room already!</h2>
-        <button className="rounded bg-[#D4B88C] px-8 py-3 text-white hover:bg-[#C4A87C] transition-colors">
-          Book Now
-        </button>
+        {/* ปุ่ม Book Now */}
+        <Link href="/rooms">
+          <button className="rounded bg-[#D4B88C] px-8 py-3 text-white hover:bg-[#C4A87C] transition-colors">
+            Book Now
+          </button>
+        </Link>
       </div>
     </div>
   );

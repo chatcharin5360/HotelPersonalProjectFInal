@@ -8,6 +8,7 @@ interface RoomType {
   title: string;
   imageUrl: string;
   description: string;
+  price: number;
 }
 
 const rooms: RoomType[] = [
@@ -17,6 +18,7 @@ const rooms: RoomType[] = [
     imageUrl: "/image/Landing/twin-room.jpg",
     description:
       "A comfortable twin room with modern amenities, perfect for sharing.",
+    price: 147,
   },
   {
     id: "standard",
@@ -24,6 +26,7 @@ const rooms: RoomType[] = [
     imageUrl: "/image/Landing/standard-room.jpg",
     description:
       "A cozy standard room with a queen-sized bed and a beautiful city view.",
+    price: 155,
   },
   {
     id: "view",
@@ -31,6 +34,7 @@ const rooms: RoomType[] = [
     imageUrl: "/image/Landing/view-room.jpg",
     description:
       "A stylish room offering breathtaking views of the surroundings.",
+    price: 195,
   },
   {
     id: "deluxe",
@@ -38,10 +42,12 @@ const rooms: RoomType[] = [
     imageUrl: "/image/Landing/deluxe-room.jpg",
     description:
       "A spacious deluxe room with premium furnishings and top-tier comfort.",
+    price: 210,
   },
 ];
 
-const RoomCard = ({ id, title, imageUrl, description }: RoomType) => {
+const RoomCard = ({ id, title, imageUrl, description, price }: RoomType) => {
+  const [showDetails, setShowDetails] = useState(false);
   const router = useRouter();
 
   const handleBooking = () => {
@@ -61,19 +67,45 @@ const RoomCard = ({ id, title, imageUrl, description }: RoomType) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg shadow-lg flex flex-col items-center w-full max-w-lg">
+    <div className="relative overflow-hidden rounded-lg shadow-lg flex flex-col items-center w-full max-w-lg p-4 bg-[#3b3b2e]">
       <div className="relative w-full h-64">
-        <Image src={imageUrl} alt={title} fill className="object-cover" />
+        <Image
+          src={imageUrl}
+          alt={title}
+          fill
+          className="object-cover rounded-lg"
+        />
       </div>
-      <h3 className="text-lg font-bold uppercase tracking-widest bg-[#3b3b2e] px-4 py-2 shadow-md text-center w-full">
+      <h3 className="text-lg font-bold uppercase tracking-widest bg-black px-4 py-2 shadow-md text-center w-full">
         {title}
       </h3>
-      <button
-        className="mt-2 bg-[#D4B88C] text-white px-4 py-2 rounded hover:bg-[#C4A87C] transition"
-        onClick={handleBooking}
-      >
-        Book Now
-      </button>
+      <div className="flex items-center gap-4 mt-4">
+        <button
+          className={`px-4 py-2 rounded ${
+            showDetails ? "bg-gray-700 text-white" : "bg-[#D4B88C] text-white"
+          } hover:bg-[#C4A87C] transition`}
+          onClick={() => setShowDetails(!showDetails)}
+        >
+          {showDetails ? "Hide Details" : "View Details"}
+        </button>
+        <button
+          onClick={handleBooking}
+          className="px-4 py-2 bg-[#D4B88C] text-white rounded hover:bg-[#C4A87C] transition"
+        >
+          Book Now
+        </button>
+      </div>
+
+      <div className="h-24 mt-2 transition-all duration-300">
+        {showDetails && (
+          <>
+            <p className="text-white text-center">{description}</p>
+            <p className="text-white font-semibold text-center mt-2">
+              Price: ${price} per night
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 };
