@@ -1,7 +1,5 @@
 import Image from "next/image";
-import Footer from "@/components/Landing/Footer";
 import HotelRoomslp from "@/components/Landing/Hotelroomlp";
-import Navbar from "@/components/Landing/Navbar";
 import Text from "@/components/Landing/Text";
 import SecondaryNavbar from "@/components/Landing/SecoundNav";
 export default function Home() {

@@ -1,6 +1,11 @@
 import React from "react";
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton, SignOutButton } from "@clerk/nextjs";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignOutButton,
+} from "@clerk/nextjs";
 
 const Navbar = () => {
   return (
@@ -8,7 +13,7 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo session */}
         <div className="bg-primary p-6 rounded-b-3xl flex flex-col cormorant-font justify-center items-center mt-5">
-          <h1 className="text-xl font-bold  tracking-widest">LUXURY</h1>
+          <h1 className="text-xl font-bold tracking-widest">LUXURY</h1>
           <h2 className="text-[10px] tracking-widest">HOTELS</h2>
         </div>
         <ul className="flex space-x-4 gap-16 roboto-font">
@@ -35,16 +40,18 @@ const Navbar = () => {
           <li>
             <div className="hover:text-gray-400">
               <SignedOut>
-              <SignInButton mode="modal" forceRedirectUrl={"/admin/dashboard"}>
-                Login
-              </SignInButton>
+                <SignInButton mode="modal">Login</SignInButton>
               </SignedOut>
-              
-
               <SignedIn>
-                <SignOutButton>
-                Logout
-                </SignOutButton>
+                <Link
+                  href="/account"
+                  className="group-hover:block hover:text-gray-400 ml-4"
+                >
+                  Account
+                </Link>
+                <span className="group-hover:block hover:text-gray-400 ml-4">
+                <SignOutButton>Logout</SignOutButton>
+                </span>
               </SignedIn>
             </div>
           </li>
