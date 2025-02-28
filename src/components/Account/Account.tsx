@@ -1,18 +1,49 @@
 "use client";
 
-import { useUser, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import {
+  useUser,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  useAuth,
+} from "@clerk/nextjs";
+import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const Account = () => {
   const { user } = useUser();
   const router = useRouter();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (!user) {
       router.push("/login");
     }
   }, [user, router]);
+
+  const [input, setInput] = useState({
+    FirstName: user?.firstName,
+    LastName: user?.lastName,
+    Email: user?.emailAddresses[0].emailAddress,
+    Phone: user?.phoneNumbers[0].phoneNumber,
+  });
+
+  const handleChange = (e) => {
+    setInput({ ...input, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const Token = await getToken();
+    console.log(Token);
+    console.log(input);
+    const response = await axios.post("http://localhost:8000/api/user/profile", input,{
+      headers: {Authorization: `Bearer ${Token}`}
+    })
+    console.log(response);
+    
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black">
@@ -22,25 +53,52 @@ const Account = () => {
         </h2>
 
         <SignedIn>
-          <div className="text-lg text-black">
-            <p>
-              <strong>First Name:</strong> {user?.firstName || "N/A"}
-            </p>
-            <p>
-              <strong>Last Name:</strong> {user?.lastName || "N/A"}
-            </p>
-            <p>
-              <strong>Email:</strong>{" "}
-              {user?.primaryEmailAddress?.emailAddress || "N/A"}
-            </p>
-            <p>
-              <strong>Phone:</strong>{" "}
-              {user?.primaryPhoneNumber?.phoneNumber || "N/A"}
-            </p>
-            {/* <p>
-              <strong>Role:</strong> {user?.publicMetadata.role || "USER"}
-            </p> */}
-          </div>
+          <form
+            className="flex flex-col gap-2 text-black"
+            onSubmit={handleSubmit}
+          >
+            <label>
+              FirstName
+              <input
+                type="text"
+                name="FirstName"
+                value={input.FirstName}
+                className="border border-black"
+                onChange={handleChange}
+              />
+            </label>
+            <label>
+              LastName
+              <input
+                type="text"
+                name="LastName"
+                value={input.LastName}
+                className="border border-black"
+                onChange={handleChange}
+              />
+            </label>
+            <label>
+              Email
+              <input
+                type="text"
+                name="Email"
+                value={input.Email}
+                className="border border-black"
+                onChange={handleChange}
+              />
+            </label>
+            <label>
+              Phone
+              <input
+                type="text"
+                name="Phone"
+                value={input.Phone}
+                className="border border-black"
+                onChange={handleChange}
+              />
+            </label>
+            <button className="border border-black">Submit</button>
+          </form>
 
           {user?.publicMetadata.role === "ADMIN" && (
             <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
