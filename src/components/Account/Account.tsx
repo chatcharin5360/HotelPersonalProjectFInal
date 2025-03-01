@@ -16,33 +16,72 @@ const Account = () => {
   const router = useRouter();
   const { getToken } = useAuth();
 
+  const [input, setInput] = useState({
+    FirstName: "",
+    LastName: "",
+    Email: "",
+    Phone: "",
+  });
+
+  // ✅ ฟังก์ชันดึงข้อมูลโปรไฟล์จาก Backend
+  const fetchUserData = async () => {
+    try {
+      const Token = await getToken();
+      if (!Token) {
+        console.error("Token is missing!");
+        return;
+      }
+
+      const response = await axios.get(
+        "http://localhost:8000/api/user/profile",
+        {
+          headers: { Authorization: `Bearer ${Token}` },
+        }
+      );
+
+      setInput(response.data);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  // ✅ ดึงข้อมูลเมื่อเปิดหน้า Account
   useEffect(() => {
     if (!user) {
-      router.push("/login");
+      router.push("/Login");
+    } else {
+      fetchUserData();
     }
   }, [user, router]);
 
-  const [input, setInput] = useState({
-    FirstName: user?.firstName,
-    LastName: user?.lastName,
-    Email: user?.emailAddresses[0].emailAddress,
-    Phone: user?.phoneNumbers[0].phoneNumber,
-  });
-
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const Token = await getToken();
-    console.log(Token);
-    console.log(input);
-    const response = await axios.post("http://localhost:8000/api/user/profile", input,{
-      headers: {Authorization: `Bearer ${Token}`}
-    })
-    console.log(response);
-    
+    try {
+      const Token = await getToken();
+      if (!Token) {
+        console.error("Token is missing!");
+        return;
+      }
+
+      const response = await axios.post(
+        "http://localhost:8000/api/user/profile",
+        input,
+        {
+          headers: { Authorization: `Bearer ${Token}` },
+        }
+      );
+
+      console.log("Profile updated successfully:", response.data);
+
+      // ✅ รีเฟรชข้อมูลหลังจากอัปเดต
+      fetchUserData();
+    } catch (error:any) {
+      console.error("Error updating profile:", error.response?.data || error);
+    }
   };
 
   return (
@@ -58,33 +97,34 @@ const Account = () => {
             onSubmit={handleSubmit}
           >
             <label>
-              FirstName
+              First Name
               <input
                 type="text"
                 name="FirstName"
                 value={input.FirstName}
-                className="border border-black"
+                className="border border-black p-2 rounded w-full"
                 onChange={handleChange}
               />
             </label>
             <label>
-              LastName
+              Last Name
               <input
                 type="text"
                 name="LastName"
                 value={input.LastName}
-                className="border border-black"
+                className="border border-black p-2 rounded w-full"
                 onChange={handleChange}
               />
             </label>
             <label>
               Email
               <input
-                type="text"
+                type="email"
                 name="Email"
                 value={input.Email}
-                className="border border-black"
+                className="border border-black p-2 rounded w-full"
                 onChange={handleChange}
+                disabled
               />
             </label>
             <label>
@@ -93,11 +133,13 @@ const Account = () => {
                 type="text"
                 name="Phone"
                 value={input.Phone}
-                className="border border-black"
+                className="border border-black p-2 rounded w-full"
                 onChange={handleChange}
               />
             </label>
-            <button className="border border-black">Submit</button>
+            <button className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
+              Save Changes
+            </button>
           </form>
 
           {user?.publicMetadata.role === "ADMIN" && (
