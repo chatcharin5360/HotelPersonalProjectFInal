@@ -1,5 +1,5 @@
 "use client";
-
+import { useState, useEffect } from "react";
 import {
   useUser,
   SignedIn,
@@ -8,92 +8,76 @@ import {
   useAuth,
 } from "@clerk/nextjs";
 import axios from "axios";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 const Account = () => {
   const { user } = useUser();
-  const router = useRouter();
   const { getToken } = useAuth();
 
   const [input, setInput] = useState({
-    FirstName: "",
-    LastName: "",
-    Email: "",
-    Phone: "",
+    FirstName: user?.firstName || "",
+    LastName: user?.lastName || "",
   });
 
-  // ✅ ฟังก์ชันดึงข้อมูลโปรไฟล์จาก Backend
-  const fetchUserData = async () => {
-    try {
-      const Token = await getToken();
-      if (!Token) {
-        console.error("Token is missing!");
-        return;
-      }
-
-      const response = await axios.get(
-        "http://localhost:8000/api/user/profile",
-        {
-          headers: { Authorization: `Bearer ${Token}` },
-        }
-      );
-
-      setInput(response.data);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  };
-
-  // ✅ ดึงข้อมูลเมื่อเปิดหน้า Account
+  // ✅ ดึงข้อมูลจาก MySQL (เผื่อ Clerk มีการเปลี่ยนชื่อภายหลัง)
   useEffect(() => {
-    if (!user) {
-      router.push("/Login");
-    } else {
-      fetchUserData();
-    }
-  }, [user, router]);
+    const fetchUserData = async () => {
+      try {
+        const Token = await getToken();
+        if (!Token) return;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput({ ...input, [e.target.name]: e.target.value });
-  };
+        const response = await axios.get(
+          "http://localhost:8000/api/user/profile",
+          {
+            headers: { Authorization: `Bearer ${Token}` },
+          }
+        );
 
+        setInput({
+          FirstName: response.data.FirstName,
+          LastName: response.data.LastName,
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    if (user) fetchUserData();
+  }, [user]);
+
+  // ✅ อัปเดตทั้ง Clerk และ MySQL
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
+      // อัปเดต Clerk ก่อน
+      await user?.update({
+        firstName: input.FirstName,
+        lastName: input.LastName,
+      });
+
+      // อัปเดต MySQL ผ่าน Backend
       const Token = await getToken();
-      if (!Token) {
-        console.error("Token is missing!");
-        return;
-      }
+      await axios.post("http://localhost:8000/api/user/profile", input, {
+        headers: { Authorization: `Bearer ${Token}` },
+      });
 
-      const response = await axios.post(
-        "http://localhost:8000/api/user/profile",
-        input,
-        {
-          headers: { Authorization: `Bearer ${Token}` },
-        }
-      );
-
-      console.log("Profile updated successfully:", response.data);
-
-      // ✅ รีเฟรชข้อมูลหลังจากอัปเดต
-      fetchUserData();
-    } catch (error:any) {
-      console.error("Error updating profile:", error.response?.data || error);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update profile.");
+      console.error("Error updating profile:", error);
     }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black">
-      <div className="bg-white p-20 rounded-lg shadow-md w-full max-w-md">
+      <div className="bg-white p-10 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-semibold text-center mb-6 text-black">
           Account Details
         </h2>
 
         <SignedIn>
           <form
-            className="flex flex-col gap-2 text-black"
+            className="flex flex-col gap-4 text-black"
             onSubmit={handleSubmit}
           >
             <label>
@@ -103,7 +87,9 @@ const Account = () => {
                 name="FirstName"
                 value={input.FirstName}
                 className="border border-black p-2 rounded w-full"
-                onChange={handleChange}
+                onChange={(e) =>
+                  setInput({ ...input, FirstName: e.target.value })
+                }
               />
             </label>
             <label>
@@ -113,7 +99,9 @@ const Account = () => {
                 name="LastName"
                 value={input.LastName}
                 className="border border-black p-2 rounded w-full"
-                onChange={handleChange}
+                onChange={(e) =>
+                  setInput({ ...input, LastName: e.target.value })
+                }
               />
             </label>
             <label>
@@ -121,9 +109,8 @@ const Account = () => {
               <input
                 type="email"
                 name="Email"
-                value={input.Email}
+                value={user?.primaryEmailAddress?.emailAddress || ""}
                 className="border border-black p-2 rounded w-full"
-                onChange={handleChange}
                 disabled
               />
             </label>
@@ -132,9 +119,9 @@ const Account = () => {
               <input
                 type="text"
                 name="Phone"
-                value={input.Phone}
+                value={user?.primaryPhoneNumber?.phoneNumber || "N/A"}
                 className="border border-black p-2 rounded w-full"
-                onChange={handleChange}
+                disabled
               />
             </label>
             <button className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
