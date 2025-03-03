@@ -1,151 +1,136 @@
 "use client";
-import { useState, useEffect } from "react";
-import {
-  useUser,
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  useAuth,
-} from "@clerk/nextjs";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
 const Account = () => {
-  const { user } = useUser();
-  const { getToken } = useAuth();
+  const router = useRouter();
+  const [user, setUser] = useState({ FirstName: "", LastName: "", Email: "" });
+  const [loading, setLoading] = useState(true); // Start with loading state
+  const [updating, setUpdating] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [token, setToken] = useState("");
 
-  const [input, setInput] = useState({
-    FirstName: user?.firstName || "",
-    LastName: user?.lastName || "",
-  });
-
-  // ✅ ดึงข้อมูลจาก MySQL (เผื่อ Clerk มีการเปลี่ยนชื่อภายหลัง)
+  // ดึง Token จาก localStorage
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const Token = await getToken();
-        if (!Token) return;
+    const storedToken = localStorage.getItem("token");
+    if (!storedToken) {
+      toast.error("Please login first.");
+      router.push("/login");
+      return;
+    }
+    setToken(storedToken);
+    fetchUser(storedToken);
+  }, []);
 
-        const response = await axios.get(
-          "http://localhost:8000/api/user/profile",
-          {
-            headers: { Authorization: `Bearer ${Token}` },
-          }
-        );
-
-        setInput({
-          FirstName: response.data.FirstName,
-          LastName: response.data.LastName,
-        });
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    if (user) fetchUserData();
-  }, [user]);
-
-  // ✅ อัปเดตทั้ง Clerk และ MySQL
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // ดึงข้อมูลผู้ใช้จาก API
+  const fetchUser = async (token: string) => {
     try {
-      // อัปเดต Clerk ก่อน
-      await user?.update({
-        firstName: input.FirstName,
-        lastName: input.LastName,
-      });
-
-      // อัปเดต MySQL ผ่าน Backend
-      const Token = await getToken();
-      await axios.post("http://localhost:8000/api/user/profile", input, {
-        headers: { Authorization: `Bearer ${Token}` },
-      });
-
-      toast.success("Profile updated successfully!");
-    } catch (error) {
-      toast.error("Failed to update profile.");
-      console.error("Error updating profile:", error);
+      const response = await axios.get(
+        "http://localhost:8000/api/user/profile",
+        {
+          headers: { Authorization: `Bearer ${token}` }, // เปลี่ยน URL เป็น /api/user/profile
+        }
+      );
+      setUser(response.data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to fetch user data");
+    } finally {
+      setLoading(false); // End loading once data is fetched
     }
   };
 
+  // ฟังก์ชันอัปเดตข้อมูลผู้ใช้
+  const handleUpdate = async () => {
+    setUpdating(true);
+    try {
+      await axios.post(
+        "http://localhost:8000/api/user/update", // เปลี่ยน URL เป็น /api/user/update
+        { FirstName: user.FirstName, LastName: user.LastName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Profile updated successfully!");
+      setEditMode(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Update failed!");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // ฟังก์ชัน Logout
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    toast.success("Logged out successfully!");
+    router.push("/login");
+  };
+
+  if (loading) {
+    return <div className="text-white text-center mt-10">Loading...</div>;
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black">
-      <div className="bg-white p-10 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-black">
-          Account Details
+    <div className="min-h-screen bg-black flex justify-center items-center">
+      <div className="bg-[#3D392D] p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-semibold text-center mb-6 text-white">
+          Account
         </h2>
 
-        <SignedIn>
-          <form
-            className="flex flex-col gap-4 text-black"
-            onSubmit={handleSubmit}
-          >
-            <label>
-              First Name
-              <input
-                type="text"
-                name="FirstName"
-                value={input.FirstName}
-                className="border border-black p-2 rounded w-full"
-                onChange={(e) =>
-                  setInput({ ...input, FirstName: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Last Name
-              <input
-                type="text"
-                name="LastName"
-                value={input.LastName}
-                className="border border-black p-2 rounded w-full"
-                onChange={(e) =>
-                  setInput({ ...input, LastName: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Email
-              <input
-                type="email"
-                name="Email"
-                value={user?.primaryEmailAddress?.emailAddress || ""}
-                className="border border-black p-2 rounded w-full"
-                disabled
-              />
-            </label>
-            <label>
-              Phone
-              <input
-                type="text"
-                name="Phone"
-                value={user?.primaryPhoneNumber?.phoneNumber || "N/A"}
-                className="border border-black p-2 rounded w-full"
-                disabled
-              />
-            </label>
-            <button className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
-              Save Changes
-            </button>
-          </form>
+        <div className="flex flex-col gap-4">
+          <label className="text-white">
+            First Name
+            <input
+              type="text"
+              value={user.FirstName}
+              onChange={(e) => setUser({ ...user, FirstName: e.target.value })}
+              disabled={!editMode}
+              className={`border border-black p-2 rounded w-full text-black ${
+                editMode ? "bg-white" : "bg-gray-300 cursor-not-allowed"
+              }`}
+            />
+          </label>
 
-          {user?.publicMetadata.role === "ADMIN" && (
-            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              <p className="font-semibold">You are an Admin!</p>
-            </div>
+          <label className="text-white">
+            Last Name
+            <input
+              type="text"
+              value={user.LastName}
+              onChange={(e) => setUser({ ...user, LastName: e.target.value })}
+              disabled={!editMode}
+              className={`border border-black p-2 rounded w-full text-black ${
+                editMode ? "bg-white" : "bg-gray-300 cursor-not-allowed"
+              }`}
+            />
+          </label>
+
+          <label className="text-white">
+            Email
+            <input
+              type="email"
+              value={user.Email}
+              disabled
+              className="border border-black p-2 rounded w-full bg-gray-300 text-black cursor-not-allowed"
+            />
+          </label>
+
+          {editMode ? (
+            <button
+              onClick={handleUpdate}
+              className="bg-[#C4A36B] text-white py-2 rounded-md hover:bg-[#AD8C5A] transition"
+              disabled={updating}
+            >
+              {updating ? "Updating..." : "Save Changes"}
+            </button>
+          ) : (
+            <button
+              onClick={() => setEditMode(true)}
+              className="bg-[#C4A36B] text-white py-2 rounded-md hover:bg-[#AD8C5A] transition"
+            >
+              Edit Profile
+            </button>
           )}
-        </SignedIn>
-
-        <SignedOut>
-          <p className="text-center text-gray-500 mt-4">
-            You are not signed in.
-          </p>
-          <SignInButton mode="modal">
-            <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
-              Login
-            </button>
-          </SignInButton>
-        </SignedOut>
+        </div>
       </div>
     </div>
   );
