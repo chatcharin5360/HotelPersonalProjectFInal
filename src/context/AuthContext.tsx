@@ -4,15 +4,17 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 
 interface User {
-  id: string;
+  User_id: number;
   FirstName: string;
   LastName: string;
   Email: string;
+  Role: "ADMIN" | "USER"; // ✅ เพิ่ม Role
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean; // ✅ เช็ค Role
   login: (token: string) => void;
   logout: () => void;
 }
@@ -41,6 +43,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      console.log("✅ User Data from API:", response.data); // ✅ Debug เช็ค Role
       setUser(response.data);
     } catch (error) {
       console.error("❌ Error fetching user data", error);
@@ -53,7 +57,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = (token: string) => {
     localStorage.setItem("token", token);
     fetchUser(token);
-    // รีเฟรชหน้าหลังจาก login
     window.location.reload();
   };
 
@@ -64,7 +67,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, isAdmin: user?.Role === "ADMIN", login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

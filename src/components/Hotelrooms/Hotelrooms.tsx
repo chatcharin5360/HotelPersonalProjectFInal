@@ -1,133 +1,89 @@
 "use client";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 interface RoomType {
-  id: string;
-  title: string;
-  imageUrl: string;
-  description: string;
-  price: number;
+  Room_id: number;
+  Room_type: string;
+  Picture_id: string;
+  Description: string;
+  Price_per_night: number;
 }
 
-const rooms: RoomType[] = [
-  {
-    id: "twin",
-    title: "Standard Twin Room",
-    imageUrl: "/image/Landing/twin-room.jpg",
-    description:
-      "A comfortable twin room with modern amenities, perfect for sharing.",
-    price: 147,
-  },
-  {
-    id: "standard",
-    title: "Standard Room",
-    imageUrl: "/image/Landing/standard-room.jpg",
-    description:
-      "A cozy standard room with a queen-sized bed and a beautiful city view.",
-    price: 155,
-  },
-  {
-    id: "view",
-    title: "Standard View Room",
-    imageUrl: "/image/Landing/view-room.jpg",
-    description:
-      "A stylish room offering breathtaking views of the surroundings.",
-    price: 195,
-  },
-  {
-    id: "deluxe",
-    title: "Deluxe Room",
-    imageUrl: "/image/Landing/deluxe-room.jpg",
-    description:
-      "A spacious deluxe room with premium furnishings and top-tier comfort.",
-    price: 210,
-  },
-];
-
-const RoomCard = ({ id, title, imageUrl, description, price }: RoomType) => {
-  const [showDetails, setShowDetails] = useState(false);
+const HotelRooms = () => {
+  const [rooms, setRooms] = useState<RoomType[]>([]);
   const router = useRouter();
 
-  const handleBooking = () => {
-    const price =
-      id === "deluxe"
-        ? 250
-        : id === "view"
-        ? 220
-        : id === "standard"
-        ? 200
-        : 195;
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/rooms");
+        const data = await response.json();
+        setRooms(data);
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+      }
+    };
+
+    fetchRooms();
+  }, []);
+
+  const handleBooking = (room: RoomType) => {
     router.push(
-      `/payment?id=${id}&title=${encodeURIComponent(
-        title
-      )}&price=${price}&description=${encodeURIComponent(description)}`
+      `/payment?id=${room.Room_id}&title=${encodeURIComponent(
+        room.Room_type
+      )}&price=${room.Price_per_night}&description=${encodeURIComponent(
+        room.Description
+      )}`
     );
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg shadow-lg flex flex-col items-center w-full max-w-lg p-4 bg-[#3b3b2e]">
-      <div className="relative w-full h-64">
-        <Image
-          src={imageUrl}
-          alt={title}
-          fill
-          className="object-cover rounded-lg"
-        />
-      </div>
-      <h3 className="text-lg font-bold uppercase tracking-widest bg-black px-4 py-2 shadow-md text-center w-full">
-        {title}
-      </h3>
-      <div className="flex items-center gap-4 mt-4">
-        <button
-          className={`px-4 py-2 rounded ${
-            showDetails ? "bg-gray-700 text-white" : "bg-[#D4B88C] text-white"
-          } hover:bg-[#C4A87C] transition`}
-          onClick={() => setShowDetails(!showDetails)}
-        >
-          {showDetails ? "Hide Details" : "View Details"}
-        </button>
-        <button
-          onClick={handleBooking}
-          className="px-4 py-2 bg-[#D4B88C] text-white rounded hover:bg-[#C4A87C] transition"
-        >
-          Book Now
-        </button>
-      </div>
+    <div className="min-h-screen bg-black text-white p-8 mt-24 pb-32">
+      {/* ✅ เพิ่ม mt-24 ให้ Available Rooms ลงมาเท่ากับ Facilities และ pb-32 กันทับ Footer */}
 
-      <div className="h-24 mt-2 transition-all duration-300">
-        {showDetails && (
-          <>
-            <p className="text-white text-center">{description}</p>
-            <p className="text-white font-semibold text-center mt-2">
-              Price: ${price} per night
-            </p>
-          </>
-        )}
-      </div>
+      <h1 className="text-4xl font-bold text-center mb-8">Available Rooms</h1>
+
+      {rooms.length === 0 ? (
+        <p className="text-center text-gray-400">No rooms available.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          {rooms.map((room) => (
+            <div
+              key={room.Room_id}
+              className="bg-[#2D2921] p-6 rounded-lg shadow-lg"
+            >
+              <div className="relative w-full h-56">
+                <Image
+                  src={room.Picture_id}
+                  alt={room.Room_type}
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-lg"
+                />
+              </div>
+              <h3 className="text-2xl font-bold mt-4">{room.Room_type}</h3>
+              <p className="text-gray-400 mt-2">{room.Description}</p>
+
+              {/* ✅ ปุ่ม Book Now อยู่ขวา และราคาฝั่งซ้าย */}
+              <div className="flex justify-between items-center mt-4">
+                <p className="text-lg font-semibold text-yellow-400">
+                  ${room.Price_per_night} per night
+                </p>
+                <button
+                  onClick={() => handleBooking(room)}
+                  className="bg-[#D4B88C] text-white py-2 px-6 rounded-lg hover:bg-[#C4A87C] transition-colors"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
-const RoomsSection = () => {
-  return (
-    <div className="container mx-auto px-4 py-8 ">
-      <h2 className="text-3xl font-light mb-8 uppercase text-center mt-24">
-        Rooms and Rates
-      </h2>
-      <p className="text-center max-w-2xl mx-auto text-gray-600 mb-12">
-        Each of our hotel rooms comes with comprehensive guest amenities and a
-        comfortable bed. Whether you seek a cozy retreat or a luxury experience,
-        we have the perfect option for you.
-      </p>
-      <div className="flex flex-col items-center md:flex-row md:flex-wrap md:justify-center gap-12">
-        {rooms.map((room) => (
-          <RoomCard key={room.id} {...room} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-export default RoomsSection;
+export default HotelRooms;
