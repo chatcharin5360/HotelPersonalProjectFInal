@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -7,37 +7,34 @@ import { toast } from "react-hot-toast";
 const Login = () => {
   const router = useRouter();
   const [input, setInput] = useState({ Email: "", Password: "" });
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      router.push("/account"); // ถ้ามี token ให้ไปหน้า account เลย
-    }
-  }, [router]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-    toast.loading("Logging in...");
+    const loadingToast = toast.loading("Logging in...");
 
     try {
       const response = await axios.post(
         "http://localhost:8000/api/login",
         input
       );
-      localStorage.setItem("token", response.data.token);
-      toast.dismiss();
-      toast.success("Login successful!");
-      router.push("/account");
 
-      // รีเฟรชหน้าหลังจาก login
-      window.location.reload();
+      toast.dismiss(loadingToast);
+
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        toast.success("Login successful!");
+        router.push("/account");
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      } else {
+        toast.error("Login failed! Please try again.");
+      }
     } catch (error: any) {
-      toast.dismiss();
+      toast.dismiss(loadingToast);
+      console.error("❌ Login Error:", error);
       toast.error(error.response?.data?.message || "Login failed!");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -76,17 +73,19 @@ const Login = () => {
           <button
             type="submit"
             className="bg-[#C4A36B] text-white py-2 rounded-md hover:bg-[#AD8C5A] transition"
-            disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            Login
           </button>
         </form>
 
         <p className="text-center text-gray-300 mt-4">
           Don't have an account?{" "}
-          <a href="/register" className="text-[#C4A36B] hover:underline">
+          <span
+            onClick={() => router.push("/register")}
+            className="text-[#C4A36B] hover:underline cursor-pointer"
+          >
             Register here
-          </a>
+          </span>
         </p>
       </div>
     </div>

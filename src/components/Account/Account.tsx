@@ -6,69 +6,57 @@ import { toast } from "react-hot-toast";
 
 const Account = () => {
   const router = useRouter();
-  const [user, setUser] = useState({ FirstName: "", LastName: "", Email: "" });
-  const [loading, setLoading] = useState(true); // Start with loading state
-  const [updating, setUpdating] = useState(false);
+  const [user, setUser] = useState({
+    FirstName: "",
+    LastName: "",
+    Email: "",
+  });
   const [editMode, setEditMode] = useState(false);
-  const [token, setToken] = useState("");
 
-  // ดึง Token จาก localStorage
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (!storedToken) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
       toast.error("Please login first.");
       router.push("/login");
       return;
     }
-    setToken(storedToken);
-    fetchUser(storedToken);
-  }, []);
 
-  // ดึงข้อมูลผู้ใช้จาก API
-  const fetchUser = async (token: string) => {
-    try {
-      const response = await axios.get(
-        "http://localhost:8000/api/user/profile",
-        {
-          headers: { Authorization: `Bearer ${token}` }, // เปลี่ยน URL เป็น /api/user/profile
-        }
-      );
-      setUser(response.data);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to fetch user data");
-    } finally {
-      setLoading(false); // End loading once data is fetched
-    }
-  };
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8000/api/user/profile",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setUser(response.data);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to fetch user data");
+        router.push("/login");
+      }
+    };
 
-  // ฟังก์ชันอัปเดตข้อมูลผู้ใช้
+    fetchUser();
+  }, [router]);
+
   const handleUpdate = async () => {
-    setUpdating(true);
-    try {
-      await axios.post(
-        "http://localhost:8000/api/user/update", // เปลี่ยน URL เป็น /api/user/update
+    const token = localStorage.getItem("token");
+
+    await toast.promise(
+      axios.post(
+        "http://localhost:8000/api/user/update",
         { FirstName: user.FirstName, LastName: user.LastName },
         { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Profile updated successfully!");
-      setEditMode(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Update failed!");
-    } finally {
-      setUpdating(false);
-    }
-  };
+      ),
+      {
+        loading: "Updating profile...",
+        success: "Profile updated successfully!",
+        error: "Update failed!",
+      }
+    );
 
-  // ฟังก์ชัน Logout
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    toast.success("Logged out successfully!");
-    router.push("/login");
+    setEditMode(false);
   };
-
-  if (loading) {
-    return <div className="text-white text-center mt-10">Loading...</div>;
-  }
 
   return (
     <div className="min-h-screen bg-black flex justify-center items-center">
@@ -118,9 +106,8 @@ const Account = () => {
             <button
               onClick={handleUpdate}
               className="bg-[#C4A36B] text-white py-2 rounded-md hover:bg-[#AD8C5A] transition"
-              disabled={updating}
             >
-              {updating ? "Updating..." : "Save Changes"}
+              Save Changes
             </button>
           ) : (
             <button

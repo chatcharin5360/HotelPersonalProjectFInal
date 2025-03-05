@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 interface RoomType {
   Room_id: number;
@@ -12,7 +13,7 @@ interface RoomType {
 }
 
 const AdminRooms = () => {
-  const { isAdmin, loading } = useAuth();
+  const router = useRouter();
   const [rooms, setRooms] = useState<RoomType[]>([]);
   const [newRoom, setNewRoom] = useState({
     Room_type: "",
@@ -21,23 +22,47 @@ const AdminRooms = () => {
     Price_per_night: "",
   });
 
-  const router = useRouter();
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login first.");
+      router.push("/login");
+      return;
+    }
+
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8000/api/user/profile",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.Role !== "ADMIN") {
+          toast.error("Access Denied! Admin only.");
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to fetch user data");
+        router.push("/login");
+      }
+    };
+
+    fetchUser();
+  }, [router]);
 
   const fetchRooms = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/rooms", {
+      const response = await axios.get("http://localhost:8000/api/rooms", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch rooms");
-      }
-
-      const data = await response.json();
-      setRooms(data);
+      if (!response.data) throw new Error("Failed to load rooms");
+      setRooms(response.data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
+      toast.error("Failed to load rooms");
     }
   }, []);
 
@@ -46,47 +71,53 @@ const AdminRooms = () => {
   }, [fetchRooms]);
 
   const handleAddRoom = async () => {
+    if (
+      !newRoom.Room_type ||
+      !newRoom.Picture_id ||
+      !newRoom.Description ||
+      !newRoom.Price_per_night
+    ) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/rooms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newRoom),
-      });
+      const response = await axios.post(
+        "http://localhost:8000/api/rooms",
+        newRoom,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to add room");
-      }
-
+      setRooms([...rooms, response.data]);
       setNewRoom({
         Room_type: "",
         Picture_id: "",
         Description: "",
         Price_per_night: "",
       });
-      await fetchRooms();
+      toast.success("Room added successfully!");
     } catch (error) {
       console.error("Error adding room:", error);
+      toast.error("Failed to add room");
     }
   };
 
   const handleDeleteRoom = async (roomId: number) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:8000/api/rooms/${roomId}`,
-        {
-          method: "DELETE",
+      await toast.promise(
+        axios.delete(`http://localhost:8000/api/rooms/${roomId}`, {
           headers: { Authorization: `Bearer ${token}` },
+        }),
+        {
+          loading: "Deleting room...",
+          success: "Room deleted successfully!",
+          error: "Failed to delete room.",
         }
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete room");
-      }
 
       setRooms(rooms.filter((room) => room.Room_id !== roomId));
     } catch (error) {
@@ -94,20 +125,13 @@ const AdminRooms = () => {
     }
   };
 
-  if (loading)
-    return <div className="text-white text-center mt-10">Loading...</div>;
-  if (!isAdmin)
-    return <div className="text-white text-center mt-10">Access Denied</div>;
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black pt-24 pb-32">
-      {/* ✅ mt-24 ให้เนื้อหาขยับลง และ pb-32 ป้องกันทับกับ Footer */}
       <div className="w-full max-w-3xl bg-[#3D392D] p-6 rounded-lg shadow-lg">
         <h1 className="text-2xl text-white font-bold mb-6 text-center">
           Admin Room Management
         </h1>
 
-        {/* ปุ่ม Back to Dashboard */}
         <div className="flex justify-end mb-4">
           <button
             onClick={() => router.push("/admin/dashboard")}
@@ -117,7 +141,6 @@ const AdminRooms = () => {
           </button>
         </div>
 
-        {/* Add New Room */}
         <div className="bg-[#2D2921] p-6 rounded-lg mb-6">
           <h3 className="text-lg font-bold mb-4 text-white">Add New Room</h3>
           <input
@@ -164,7 +187,6 @@ const AdminRooms = () => {
           </button>
         </div>
 
-        {/* Room List Table */}
         <div className="bg-[#2D2921] p-6 rounded-lg">
           <table className="table-auto w-full text-left text-white">
             <thead>

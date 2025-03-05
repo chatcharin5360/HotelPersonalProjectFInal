@@ -1,48 +1,61 @@
 "use client";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext"; // ✅ ใช้ AuthContext เพื่อตรวจสอบสิทธิ์
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 const Dashboard = () => {
-  const { isAdmin, loading } = useAuth(); // ✅ เช็คสิทธิ์ Admin
+  const [isAdmin, setIsAdmin] = useState(false);
   const [data, setData] = useState({
     totalRooms: 0,
     totalUsers: 0,
     totalBookings: 0,
     totalPayments: 0,
   });
+
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin && !loading) {
-      router.push("/login"); // ✅ ถ้าไม่ใช่ Admin ให้ Redirect
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
       return;
     }
 
-    const fetchDashboardData = async () => {
+    const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:8000/api/admin/dashboard",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          "http://localhost:8000/api/user/profile",
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        setData(response.data);
+
+        if (response.data.Role === "ADMIN") {
+          setIsAdmin(true);
+          fetchDashboardData(token);
+        } else {
+          toast.error("Access Denied! Admin only.");
+          router.push("/");
+        }
       } catch (error) {
-        console.error("Error fetching dashboard data", error);
+        console.error("Error fetching user data:", error);
+        router.push("/login");
       }
     };
 
-    if (isAdmin) {
-      fetchDashboardData();
-    }
-  }, [isAdmin, loading, router]);
+    const fetchDashboardData = async (token: string) => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8000/api/admin/dashboard",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setData(response.data);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
 
-  if (loading) {
-    return <div className="text-white text-center mt-10">Loading...</div>;
-  }
+    fetchUser();
+  }, [router]);
 
   if (!isAdmin) {
     return <div className="text-white text-center mt-10">Access Denied</div>;

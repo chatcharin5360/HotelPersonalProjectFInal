@@ -12,20 +12,24 @@ const Register = () => {
     Email: "",
     Password: "",
   });
-  const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
+
+    const loadingToast = toast.loading("Signing up...");
 
     try {
       await axios.post("http://localhost:8000/api/register", input);
-      toast.success("Registration successful!");
+
+      toast.dismiss(loadingToast);
+      toast.success("Registration successful! Please login.");
+
       router.push("/login");
     } catch (error: any) {
+      console.error("❌ Registration Error:", error);
+
+      toast.dismiss(loadingToast);
       toast.error(error.response?.data?.message || "Registration failed!");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -90,17 +94,19 @@ const Register = () => {
           <button
             type="submit"
             className="bg-[#C4A36B] text-white py-2 rounded-md hover:bg-[#AD8C5A] transition"
-            disabled={loading}
           >
-            {loading ? "Signing up..." : "Sign Up"}
+            Sign Up
           </button>
         </form>
 
         <p className="text-center text-gray-300 mt-4">
           Already have an account?{" "}
-          <a href="/login" className="text-[#C4A36B] hover:underline">
+          <span
+            onClick={() => router.push("/login")}
+            className="text-[#C4A36B] hover:underline cursor-pointer"
+          >
             Login
-          </a>
+          </span>
         </p>
       </div>
     </div>

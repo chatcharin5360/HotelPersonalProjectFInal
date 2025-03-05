@@ -41,7 +41,6 @@ const HotelRooms = () => {
 
   return (
     <div className="min-h-screen bg-black text-white p-8 mt-24 pb-32">
-      {/* ✅ เพิ่ม mt-24 ให้ Available Rooms ลงมาเท่ากับ Facilities และ pb-32 กันทับ Footer */}
 
       <h1 className="text-4xl font-bold text-center mb-8">Available Rooms</h1>
 
@@ -66,7 +65,6 @@ const HotelRooms = () => {
               <h3 className="text-2xl font-bold mt-4">{room.Room_type}</h3>
               <p className="text-gray-400 mt-2">{room.Description}</p>
 
-              {/* ✅ ปุ่ม Book Now อยู่ขวา และราคาฝั่งซ้าย */}
               <div className="flex justify-between items-center mt-4">
                 <p className="text-lg font-semibold text-yellow-400">
                   ${room.Price_per_night} per night
