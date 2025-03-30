@@ -34,7 +34,9 @@ const AdminRooms = () => {
       try {
         const response = await axios.get(
           "http://localhost:8000/api/user/profile",
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
 
         if (response.data.Role !== "ADMIN") {
@@ -57,8 +59,6 @@ const AdminRooms = () => {
       const response = await axios.get("http://localhost:8000/api/rooms", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!response.data) throw new Error("Failed to load rooms");
       setRooms(response.data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
@@ -69,6 +69,27 @@ const AdminRooms = () => {
   useEffect(() => {
     fetchRooms();
   }, [fetchRooms]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/upload",
+        formData
+      );
+      const imageUrl = response.data.url;
+      setNewRoom({ ...newRoom, Picture_id: imageUrl });
+      toast.success("Image uploaded successfully!");
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast.error("Image upload failed!");
+    }
+  };
 
   const handleAddRoom = async () => {
     if (
@@ -141,6 +162,7 @@ const AdminRooms = () => {
           </button>
         </div>
 
+        {/* Form Input */}
         <div className="bg-[#2D2921] p-6 rounded-lg mb-6">
           <h3 className="text-lg font-bold mb-4 text-white">Add New Room</h3>
           <input
@@ -150,16 +172,13 @@ const AdminRooms = () => {
             onChange={(e) =>
               setNewRoom({ ...newRoom, Room_type: e.target.value })
             }
-            className="border border-gray-700 p-2 mb-2 w-full text-black placeholder-gray-500 focus:outline-none rounded-md"
+            className="border p-2 mb-2 w-full text-black rounded-md"
           />
           <input
-            type="text"
-            placeholder="Image URL"
-            value={newRoom.Picture_id}
-            onChange={(e) =>
-              setNewRoom({ ...newRoom, Picture_id: e.target.value })
-            }
-            className="border border-gray-700 p-2 mb-2 w-full text-black placeholder-gray-500 focus:outline-none rounded-md"
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="mb-2 w-full text-white"
           />
           <input
             type="text"
@@ -168,7 +187,7 @@ const AdminRooms = () => {
             onChange={(e) =>
               setNewRoom({ ...newRoom, Description: e.target.value })
             }
-            className="border border-gray-700 p-2 mb-2 w-full text-black placeholder-gray-500 focus:outline-none rounded-md"
+            className="border p-2 mb-2 w-full text-black rounded-md"
           />
           <input
             type="number"
@@ -177,16 +196,17 @@ const AdminRooms = () => {
             onChange={(e) =>
               setNewRoom({ ...newRoom, Price_per_night: e.target.value })
             }
-            className="border border-gray-700 p-2 mb-2 w-full text-black placeholder-gray-500 focus:outline-none rounded-md"
+            className="border p-2 mb-2 w-full text-black rounded-md"
           />
           <button
             onClick={handleAddRoom}
-            className="bg-[#AD8C5A] text-white p-2 w-full mt-2 rounded-md hover:bg-[#C4A36B] transition"
+            className="bg-[#AD8C5A] text-white py-2 w-full rounded-md hover:bg-[#C4A36B] transition"
           >
             Add Room
           </button>
         </div>
 
+        {/* Table */}
         <div className="bg-[#2D2921] p-6 rounded-lg">
           <table className="table-auto w-full text-left text-white">
             <thead>

@@ -24,7 +24,7 @@ const Navbar = () => {
         }
       );
 
-      setUser(response.data); 
+      setUser(response.data);
     } catch (error) {
       console.error("Error fetching user:", error);
     }
@@ -57,6 +57,9 @@ const Navbar = () => {
         </li>
         <li>
           <Link href="/contact">Contact</Link>
+        </li>
+        <li>
+          <Link href="/my-bookings">My Bookings</Link>
         </li>
       </ul>
 

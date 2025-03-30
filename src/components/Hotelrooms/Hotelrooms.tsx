@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 interface RoomType {
   Room_id: number;
@@ -29,19 +31,42 @@ const HotelRooms = () => {
     fetchRooms();
   }, []);
 
-  const handleBooking = (room: RoomType) => {
-    router.push(
-      `/payment?id=${room.Room_id}&title=${encodeURIComponent(
-        room.Room_type
-      )}&price=${room.Price_per_night}&description=${encodeURIComponent(
-        room.Description
-      )}`
-    );
+  const handleBooking = async (room: RoomType) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login first.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+
+      await axios.post(
+        "http://localhost:8000/api/book",
+        {
+          roomId: room.Room_id,
+          quantity: 1,
+          checkIn: today.toISOString(),
+          checkOut: tomorrow.toISOString(),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success("Booking successful!");
+      router.push("/my-bookings");
+    } catch (error) {
+      console.error("Booking failed:", error);
+      toast.error("Booking failed!");
+    }
   };
 
   return (
     <div className="min-h-screen bg-black text-white p-8 mt-24 pb-32">
-
       <h1 className="text-4xl font-bold text-center mb-8">Available Rooms</h1>
 
       {rooms.length === 0 ? (
@@ -53,13 +78,12 @@ const HotelRooms = () => {
               key={room.Room_id}
               className="bg-[#2D2921] p-6 rounded-lg shadow-lg"
             >
-              <div className="relative w-full h-56">
+              <div className="relative w-full h-[250px]">
                 <Image
                   src={room.Picture_id}
                   alt={room.Room_type}
-                  layout="fill"
-                  objectFit="cover"
-                  className="rounded-lg"
+                  fill
+                  className="rounded-lg object-cover"
                 />
               </div>
               <h3 className="text-2xl font-bold mt-4">{room.Room_type}</h3>
