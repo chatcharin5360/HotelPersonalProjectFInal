@@ -87,7 +87,7 @@ const Payment = () => {
 
         <button
           onClick={handleMockPayment}
-          className="bg-green-600 text-white px-6 py-2 rounded w-full hover:bg-green-700 transition mt-4"
+          className="bg-[#D4B88C] text-white px-6 py-2 rounded w-full hover:bg-[#C4A87C] transition mt-4"
         >
           Pay Now
         </button>

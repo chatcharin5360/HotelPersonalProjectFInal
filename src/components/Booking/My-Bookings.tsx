@@ -103,7 +103,7 @@ const MyBookings = () => {
                 {booking.Booking_status === "PENDING" && (
                   <button
                     onClick={() => handlePayment(booking.Booking_id)}
-                    className="bg-green-600 px-4 py-2 rounded hover:bg-green-700"
+                    className="bg-[#D4B88C] px-4 py-2 rounded hover:bg-[#C4A87C]"
                   >
                     Pay Now
                   </button>
